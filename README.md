@@ -15,10 +15,10 @@ Tools used:
     - [Testing Terminology](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#testing-terminology)
     - [JUnit Test Example](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-test-example)
     - [Common Java Testing Frameworks](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#common-java-testing-frameworks)
-2. Test-Driven-Development By Example
-3. JUnit in details
-4. Mockito in details
-5. Design Tic-Tac-Toe game using TDD
+    - [Continuous Integration and Continuous Delivery (CI/CD)](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#common-java-testing-frameworks)
+2. JUnit in details
+3. Mockito in details
+4. Design Tic-Tac-Toe game using TDD
 
 ---
 
@@ -198,4 +198,137 @@ As it's a maven project -> we have the defined project structure.
 ![ProjectStructure](ProjectStructure.PNG)
 
 ### Common Java Testing Frameworks
+
+**JUnit**
+
+- The most popular testing framework for Java
+- **JUnit 5** was released in September 2017
+- **JUnit 5** will be the primary focus in this course
+
+**TestNG**
+
+- Created by Cédric Beust in 2004 as an alternative to JUnit
+- Cédric wished to address deficiencies in **JUnit**
+- Functionality of **TestNG** and **JUnit** have evolved to be very close
+- It is still popular, but much smaller base
+
+**Spock**
+
+- Testing Framework in **Groovy** for testing Java
+- Does require knowledge of Groovy
+- Follows BDD approach
+- Includes own Mocking framework
+- Very popular where Groovy is used
+
+**Cucumber**
+
+- BDD Testing Framework
+- Available for Java, Javascript, and Ruby
+- Very popular in Ruby community
+- Gaining popularity in Java community
+- Uses Gherkin syntax
+- Natural English like syntax
+- Describe the what, not the how
+
+**Mockito**
+
+- Mocking framework for testing
+- Only does mocks
+- Need to use with testing framework such as JUnit or TestNG
+- Top 10 Java Library
+- Very popular for testing Spring applications
+- Will be covered in this course
+
+**Spring MVC Test**
+
+- Testing module found in the Spring Framework
+- Very versatile for testing Spring MVC Controllers
+- Provides mock Servlet environment
+- Used in conjunction with a testing framework such as JUnit, TestNG, or Spock
+
+**REST Assured**
+
+- Java framework for testing RESTful web services
+- Provides very powerful DSL for testing Restful interfaces
+- Can be used with Spring Mock MVC
+- Tests follow a BDD Syntax
+
+**Selenium**
+
+- Web Browser Automation
+- Allows us to write functional tests against web applications
+- Only Web Browser Automation
+- Need to use a Testing Framework such as JUnit, TestNG, or Spock
+
+**GEB**
+
+- Groovy Browser Automation
+- Uses Selenium under the covers
+- Has JQuery-ish page element selectors
+- Needs to be used with a Test Framework
+- Very popular to use with Spock
+
+**Test Containers**
+
+- Allows us to launch Docker containers from JUnit Tests
+- Allows us to start databases, message brokers, etc. for integration and functional tests
+- Can be combined with Selenium for testing web applications
+
+### Continuous Integration and Continuous Delivery (CI/CD)
+
+**Continuous Integration (CI)** is a development practice that requires developers to integrate code into a shared
+repository several times a day. Each check-in is then verified by an automated build, allowing teams to detect problems
+early.
+
+Continuous Integration does not get rid of bugs, but it does make them dramatically easier to find and remove.
+
+**CI Practices**
+
+- Maintain a single source repository
+- Automate build
+- Make our build self-testing
+- Every commit should build on integration machine
+- Fix broken builds immediately
+- Keep the build fast
+- Test in a clone of the production environment
+- Make it easy for anyone to get the latest executable version
+- Everyone can see what is happening
+
+**Common CI Build Servers**
+
+**1. Self-Hosted**
+
+Jenkins, Bamboo, TeamCity, Hudson
+
+**Fun-Fact** - Jenkins forked from Hudson in 2010 due to a legal conflict with Oracle.
+
+**2. Cloud-Based**
+
+CircleCI, TravisCI, Codeship, GitLab CI, AWS CodeBuild, and many more.
+
+**Continuous Deployment** will automatically deploy build artifacts after all CI tests have run.
+
+**Continuous Deployment Practices**
+
+- Should happen with every commit
+- Completely automated
+- May include a staging area from which additional automated tests are run
+- Easily confused with **Continuous Delivery**
+- Example: AWS CodePipeline
+
+**Continuous Delivery (CD)** is the process to automatically deliver code changes directly to the Production
+Environment.
+
+**Continuous Delivery (CD) Practices**
+
+- Involves a high degree of automation in Testing and Deployment
+- Must have a *VERY* Mature Process
+- Can be difficult in some industries due to Regulatory requirements
+- This area is evolving
+- Few Hard "Rules" - No Standard Way
+- "Best Practices" are maturing, and still a lot of lively debate!
+
+---
+
+## Chapter 02. JUnit in details
 
