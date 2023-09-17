@@ -17,6 +17,9 @@ Tools used:
     - [Common Java Testing Frameworks](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#common-java-testing-frameworks)
     - [Continuous Integration and Continuous Delivery (CI/CD)](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#continuous-integration-and-continuous-delivery-cicd)
 2. [JUnit in details](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#chapter-02-junit-in-details)
+    - [JUnit 5 Modules](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-5-modules)
+    - [JUnit Annotations](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-annotations)
+    - [JUnit Maven Setup](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-maven-setup)
 3. Mockito in details
 4. Design Tic-Tac-Toe game using TDD
 
@@ -322,7 +325,7 @@ Environment.
 **Continuous Delivery (CD) Practices**
 
 - Involves a high degree of automation in Testing and Deployment
-- Must have a *VERY* Mature Process
+- Must have a **VERY** mature process
 - Can be difficult in some industries due to Regulatory requirements
 - This area is evolving
 - Few Hard "Rules" - No Standard Way
@@ -331,4 +334,122 @@ Environment.
 ---
 
 ## Chapter 02. JUnit in details
+
+### JUnit 5 Modules
+
+**JUnit Platform** - The foundation for launching testing frameworks on the JVM. Allow tests to be run from a Console
+Launcher, or build tools such as Maven and Gradle.
+
+**JUnit Jupiter** - Programming model for writing tests and extensions to JUnit.
+
+**JUnit Vintage** - Provides a test engine for running JUnit 3 and JUnit 4 tests.
+
+### JUnit Annotations
+
+| Annotation         | Description                    | 
+|--------------------|--------------------------------|
+| @Test              | Marks a method as a test method      | 
+| @ParameterizedTest | Marks method as a parameterized test | 
+| @RepeatedTest      | Repeat test N times       | 
+| @TestFactory       | Test Factory method for dynamic tests    | 
+| @TestInstance      | Used to configure test instance lifecycle    | 
+| @TestTemplate      | Creates a template to be used by multiple test cases    | 
+| @DisplayName       | Human friendly name for test      | 
+| @BeforeEach        | Method to run before each test case    | 
+| @AfterEach         | Method to run after each test case     | 
+| @BeforeAll         | Static method to run before all test cases in current class    | 
+| @AfterAll          | Static method to run after all test cases in current class    | 
+| @Nested            | Creates a nested test class      | 
+| @Tag               | Declare 'tags' for filtering tests      | 
+| @Disabled               | Disable test or test class      |
+| @ExtendWith               | Used to register extensions      |
+
+**JUnit Test Lifecycle**
+
+![JUnitTestLifecycle](JUnitTestLifecycle.PNG)
+
+### JUnit Maven Setup
+
+In `pom.xml`, need to add following **dependencies** for `JUnit`:
+
+- junit-jupiter-api
+- junit-jupiter-engine
+- junit-jupiter-params
+
+For `Mockito`:
+
+- mockito-core
+- mockito-junit-jupiter
+
+Then, need to add build **plugins**:
+
+- maven-compiler-plugin
+- maven-surefire-plugin
+- maven-failsafe-plugin
+
+Once the dependencies and plugins are added in `pom.xml`, run `mvn clean test` from terminal to confirm the build is
+success.
+
+**Sample JUnit 5 test class**
+
+```java
+import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+public class GuidemyTest {
+
+    Guidemy guidemy;
+
+    @BeforeAll
+    public static void beforeClass() {
+        System.out.println("Before - I am called once!");
+    }
+
+    @BeforeEach
+    void setUp() {
+        System.out.println("In Before Each...");
+        guidemy = new Guidemy();
+    }
+
+    @Test
+    @DisplayName("Test that object is not null after setUp()")
+    void testObjectNotNull() {
+        assertNotNull(guidemy);
+    }
+
+    @Test
+    @DisplayName("Test getting current course name")
+    void testGetCourseMethod() {
+        assertEquals("Advanced Java", guidemy.getCourse());
+    }
+
+    @AfterEach
+    void tearDown() {
+        System.out.println("In After Each...");
+    }
+
+    @AfterAll
+    public static void afterClass() {
+        System.out.println("After - I am called once!");
+    }
+}
+```
+
+**Output**
+
+```
+Before - I am called once!
+In Before Each...
+In After Each...
+In Before Each...
+In After Each...
+After - I am called once!
+```
+
+The tests display name are shown as given in the `@DisplayName` with tests success and failure results:
+
+![TestsDisplayName](TestsDisplayName.PNG)
+
 
