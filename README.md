@@ -20,6 +20,7 @@ Tools used:
     - [JUnit 5 Modules](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-5-modules)
     - [JUnit Annotations](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-annotations)
     - [JUnit Maven Setup](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-maven-setup)
+    - [JUnit Assertions](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-assertions)
 3. Mockito in details
 4. Design Tic-Tac-Toe game using TDD
 
@@ -364,10 +365,6 @@ Launcher, or build tools such as Maven and Gradle.
 | @Disabled               | Disable test or test class      |
 | @ExtendWith               | Used to register extensions      |
 
-**JUnit Test Lifecycle**
-
-![JUnitTestLifecycle](JUnitTestLifecycle.PNG)
-
 ### JUnit Maven Setup
 
 In `pom.xml`, need to add following **dependencies** for `JUnit`:
@@ -389,6 +386,10 @@ Then, need to add build **plugins**:
 
 Once the dependencies and plugins are added in `pom.xml`, run `mvn clean test` from terminal to confirm the build is
 success.
+
+**JUnit Test Lifecycle**
+
+![JUnitTestLifecycle](JUnitTestLifecycle.PNG)
 
 **Sample JUnit 5 test class**
 
@@ -452,4 +453,36 @@ The tests display name are shown as given in the `@DisplayName` with tests succe
 
 ![TestsDisplayName](TestsDisplayName.PNG)
 
+### JUnit Assertions
+
+**Assertion** - we are asserting a condition for the test to pass.
+
+Examples:
+
+```
+assertEquals(5, 5);
+assertNotEquals(2, 5);
+
+assertNotNull(object);
+assertNull(object);
+
+assertTrue(bool);
+assertFalse(bool);
+
+// overloaded method for an optional failure message
+assertEquals("Python", guidemy.getCourse(), "Course name is incorrect");  
+assertEquals("Python", guidemy.getCourse(), () -> "Course name is incorrect"); // lambda  
+```
+
+JUnit incorporates support of **lambdas** in assertions:
+
+- **Grouped assertions**: all assertions run in block, all failures reported
+- **Dependent assertions**: allows for blocks of grouped assertions
+- **Expected exceptions**: tested with `assertThrows()` lambda expression
+- **Timeouts**: tested with `assertTimeout()` lambda expression
+
+The whole API documentation can be found here:
+[Assertions API](https://junit.org/junit5/docs/5.0.1/api/org/junit/jupiter/api/Assertions.html)
+
+**Grouped assertions**
 
