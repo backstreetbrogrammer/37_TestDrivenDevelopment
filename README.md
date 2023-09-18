@@ -486,3 +486,185 @@ The whole API documentation can be found here:
 
 **Grouped assertions**
 
+Suppose we have a class `Student`:
+
+```java
+public class Student {
+
+    private final long id;
+    private final String firstName;
+    private final String lastName;
+
+    public Student(final long id, final String firstName, final String lastName) {
+        if (id <= 0) throw new IllegalArgumentException("ID can not be 0 or negative");
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+}
+```
+
+We can group all assertions run in block => all failures are reported.
+
+```java
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class StudentTest {
+
+    @Test
+    void groupedAssertions() {
+        // given
+        final Student student = new Student(1L, "John", "Wright");
+
+        // then
+        assertAll("Test Students Set",
+                  () -> assertEquals("John", student.getFirstName()),
+                  () -> assertEquals("Wright", student.getLastName())
+                 );
+    }
+
+    @Test
+    void groupedAssertionsWithMessage() {
+        // given
+        final Student student = new Student(1L, "John", "Wright");
+
+        // then
+        assertAll("Test Students Set",
+                  () -> assertEquals("John", student.getFirstName(), "First Name Failed"),
+                  () -> assertEquals("Wright", student.getLastName(), "Last Name Failed")
+                 );
+    }
+
+}
+```
+
+**Dependent assertions**
+
+We have a class `TeachingAssistant` which extends class `Student`:
+
+```java
+public class TeachingAssistant extends Student {
+    private final String courseToAssist;
+    private final int age;
+
+    public TeachingAssistant(final long id, final String firstName,
+                             final String lastName, final String courseToAssist, final int age) {
+        super(id, firstName, lastName);
+        this.courseToAssist = courseToAssist;
+        this.age = age;
+    }
+
+    public String getCourseToAssist() {
+        return courseToAssist;
+    }
+
+    public int getAge() {
+        return age;
+    }
+}
+```
+
+We can have blocks of grouped assertions:
+
+```java
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class TeachingAssistantTest {
+
+    @Test
+    void dependentAssertions() {
+        // given
+        final TeachingAssistant teachingAssistant
+                = new TeachingAssistant(2L, "Mary", "Lam", "Advanced Java", 21);
+
+        // then
+        assertAll("Students Test",
+                  () -> assertAll("Student Properties",
+                                  () -> assertEquals("Mary", teachingAssistant.getFirstName(),
+                                                     "First Name did not match"),
+                                  () -> assertEquals("Lam", teachingAssistant.getLastName())),
+                  () -> assertAll("TeachingAssistant Properties",
+                                  () -> assertEquals("Advanced Java", teachingAssistant.getCourseToAssist(),
+                                                     "Course did not match"),
+                                  () -> assertEquals(21, teachingAssistant.getAge()))
+                 );
+    }
+
+}
+```
+
+**Expected exceptions**
+
+We can use `assertThrows()` lambda expression for testing expected exceptions:
+
+```
+    @Test
+    void testExpectedExceptions() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> new Student(-1L, "Unknown", "Student"));
+    }
+```
+
+**Timeouts**
+
+We can use `assertTimeout()` lambda expression for testing the timeout operations:
+
+```
+    @Test
+    void testTimeout() {
+        assertTimeout(Duration.ofMillis(100), () -> {
+            System.out.println("Running the timeout test");
+            TimeUnit.MILLISECONDS.sleep(80L);
+        });
+    }
+
+    @Test
+    void testTimeoutPreemptively() {
+        assertTimeoutPreemptively(Duration.ofMillis(100), () -> {
+            System.out.println("Running the timeout test preemptively");
+            TimeUnit.MILLISECONDS.sleep(80L);
+        });
+    }
+```
+
+**Disabling a test**
+
+We can disable a unit test to run by using `@Disabled` annotation:
+
+```
+    @Disabled
+    @Test
+    @DisplayName("Test getting current course name")
+    void testGetCourseMethod() {
+        assertEquals("Advanced Java", guidemy.getCourse());
+    }
+```
+
+We can also disable the whole test class and give a comment value why it is disabled:
+
+```
+@Disabled(value = "Disabled until we learn Mocking")
+public class GuidemyTest { 
+   ...
+   ...
+}
+```
+
