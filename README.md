@@ -21,7 +21,8 @@ Tools used:
     - [JUnit Annotations](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-annotations)
     - [JUnit Maven Setup](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-maven-setup)
     - [JUnit Assertions](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-assertions)
-3. Mockito in details
+    - [Parameterized Tests](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#parameterized-tests)
+3. [Mockito in details](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#chapter-03-mockito-in-details)
 4. Design Tic-Tac-Toe game using TDD
 
 ---
@@ -347,23 +348,23 @@ Launcher, or build tools such as Maven and Gradle.
 
 ### JUnit Annotations
 
-| Annotation         | Description                    | 
-|--------------------|--------------------------------|
-| @Test              | Marks a method as a test method      | 
-| @ParameterizedTest | Marks method as a parameterized test | 
-| @RepeatedTest      | Repeat test N times       | 
-| @TestFactory       | Test Factory method for dynamic tests    | 
-| @TestInstance      | Used to configure test instance lifecycle    | 
-| @TestTemplate      | Creates a template to be used by multiple test cases    | 
-| @DisplayName       | Human friendly name for test      | 
-| @BeforeEach        | Method to run before each test case    | 
-| @AfterEach         | Method to run after each test case     | 
-| @BeforeAll         | Static method to run before all test cases in current class    | 
-| @AfterAll          | Static method to run after all test cases in current class    | 
-| @Nested            | Creates a nested test class      | 
-| @Tag               | Declare 'tags' for filtering tests      | 
-| @Disabled               | Disable test or test class      |
-| @ExtendWith               | Used to register extensions      |
+| Annotation         | Description                                                 | 
+|--------------------|-------------------------------------------------------------|
+| @Test              | Marks a method as a test method                             | 
+| @ParameterizedTest | Marks method as a parameterized test                        | 
+| @RepeatedTest      | Repeat test N times                                         | 
+| @TestFactory       | Test Factory method for dynamic tests                       | 
+| @TestInstance      | Used to configure test instance lifecycle                   | 
+| @TestTemplate      | Creates a template to be used by multiple test cases        | 
+| @DisplayName       | Human friendly name for test                                | 
+| @BeforeEach        | Method to run before each test case                         | 
+| @AfterEach         | Method to run after each test case                          | 
+| @BeforeAll         | Static method to run before all test cases in current class | 
+| @AfterAll          | Static method to run after all test cases in current class  | 
+| @Nested            | Creates a nested test class                                 | 
+| @Tag               | Declare 'tags' for filtering tests                          | 
+| @Disabled          | Disable test or test class                                  |
+| @ExtendWith        | Used to register extensions                                 |
 
 ### JUnit Maven Setup
 
@@ -667,4 +668,152 @@ public class GuidemyTest {
    ...
 }
 ```
+
+**Repeated Tests**
+
+We can run a unit test multiple times using `@RepeatedTest` annotation.
+
+_Example 1_
+
+```
+    @RepeatedTest(5)
+    @DisplayName("Test getting current course name")
+    void testGetCourseMethod() {
+        assertEquals("Advanced Java", guidemy.getCourse());
+    }
+```
+
+![RepeatedTest](RepeatedTest.PNG)
+
+_Example 2_
+
+```
+    @RepeatedTest(value = 5, name = "{displayName} : {currentRepetition} - {totalRepetitions}")
+    @DisplayName("Test getting current course name")
+    void testGetCourseMethod() {
+        assertEquals("Advanced Java", guidemy.getCourse());
+    }
+```
+
+![RepeatedTestDetailed](RepeatedTestDetailed.PNG)
+
+### Parameterized Tests
+
+Using parameterized tests, we can test on various input values in the same unit test case.
+
+**Value Source**
+
+All parameters are from a constant **value**.
+
+```
+    @ParameterizedTest
+    @ValueSource(strings = {"Advanced", "Java", "Course"})
+    void testValueSource(final String val) {
+        System.out.println(val);
+    }
+```
+
+![ParamValueSource](ParamValueSource.PNG)
+
+**Enum Source**
+
+All parameters are from `Enum`.
+
+```
+    @DisplayName("Enum Source Test")
+    @ParameterizedTest(name = "{displayName} - [{index}] {arguments}")
+    @EnumSource(CourseType.class)
+    void enumTest(final CourseType courseType) {
+        System.out.println(courseType.name());
+    }
+```
+
+**CSV Source**
+
+All parameters are from constant **values**, but it can be of different **types**.
+
+```
+    @DisplayName("CSV Input Test")
+    @ParameterizedTest(name = "{displayName} - [{index}] {arguments}")
+    @CsvSource({
+            "Java, 1, 4",
+            "Python, 2, 8",
+            "JavaScript, 5, 3"
+    })
+    void csvInputTest(final String courseName, final int val1, final int val2) {
+        System.out.printf("%s = %d:%d%n", courseName, val1, val2);
+    }
+```
+
+**CSV File Source**
+
+All parameters are from a **csv** file.
+
+```
+    @DisplayName("CSV From File Test")
+    @ParameterizedTest(name = "{displayName} - [{index}] {arguments}")
+    @CsvFileSource(resources = "/input.csv", numLinesToSkip = 1)
+    void csvFromFileTest(final String courseName, final int val1, final int val2) {
+        System.out.printf("%s = %d:%d%n", courseName, val1, val2);
+    }
+```
+
+**Method Provider**
+
+All parameters are from a **static method**.
+
+```
+    @DisplayName("Method Provider Test")
+    @ParameterizedTest(name = "{displayName} - [{index}] {arguments}")
+    @MethodSource("getArgs")
+    void fromMethodTest(final String courseName, final int val1, final int val2) {
+        System.out.printf("%s = %d:%d%n", courseName, val1, val2);
+    }
+
+    static Stream<Arguments> getArgs() {
+        return Stream.of(
+                Arguments.of("Java", 9, 3),
+                Arguments.of("Python", 2, 1),
+                Arguments.of("JavaScript", 1, 7)
+        );
+    }
+```
+
+**Custom Provider**
+
+All parameters are from separate **class** which implements `ArgumentsProvider`
+
+```java
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+
+import java.util.stream.Stream;
+
+public class CustomArgsProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(final ExtensionContext extensionContext) {
+        return Stream.of(
+                Arguments.of("Java", 9, 3),
+                Arguments.of("Python", 2, 1),
+                Arguments.of("JavaScript", 1, 7)
+                        );
+    }
+}
+```
+
+_Test case_
+
+```
+    @DisplayName("Custom Provider Test")
+    @ParameterizedTest(name = "{displayName} - [{index}] {arguments}")
+    @ArgumentsSource(CustomArgsProvider.class)
+    void fromCustomerProviderTest(final String courseName, final int val1, final int val2) {
+        System.out.printf("%s = %d:%d%n", courseName, val1, val2);
+    }
+```
+
+---
+
+## Chapter 03. Mockito in details
 

@@ -26,7 +26,7 @@ public class GuidemyTest {
         assertNotNull(guidemy);
     }
 
-    @Test
+    @RepeatedTest(value = 5, name = "{displayName} : {currentRepetition} - {totalRepetitions}")
     @DisplayName("Test getting current course name")
     void testGetCourseMethod() {
         assertEquals("Advanced Java", guidemy.getCourse());
