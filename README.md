@@ -23,6 +23,7 @@ Tools used:
     - [JUnit Assertions](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#junit-assertions)
     - [Parameterized Tests](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#parameterized-tests)
 3. [Mockito in details](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#chapter-03-mockito-in-details)
+    - [Mockito Annotations](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#mockito-annotations)
 4. Design Tic-Tac-Toe game using TDD
 
 ---
@@ -816,4 +817,35 @@ _Test case_
 ---
 
 ## Chapter 03. Mockito in details
+
+Mockito is the most popular mocking framework for testing Java:
+
+- **Mocks** (aka **Test Doubles**) are alternate implementations of objects to replace real objects in tests
+- Works well with **Dependency Injection**
+- For the class under test, injected dependencies can be **Mocks**
+
+**_Types of Mocks_**
+
+- **Dummy** - Object used just to get the code to compile
+- **Fake** - An object that has an implementation, but not production ready
+- **Stub** - An object with pre-defined answers to method calls
+- **Mock** - An object with pre-defined answers to method calls, and has expectations of executions. Can throw an
+  exception if an unexpected invocation is detected.
+- **Spy** - In Mockito, Spies are Mock like wrappers around the **actual object**
+
+**_Important Terminology_**
+
+- **Verify** - Used to verify **number of times** a mocked method has been called
+- **Argument Matcher** - Matches arguments passed to mocked method and will allow or disallow
+- **Argument Captor** - Captures arguments passed to a mocked method and allows us to perform assertions of what was
+  passed in to method
+
+### Mockito Annotations
+
+| Annotation   | Description                                 | 
+|--------------|---------------------------------------------|
+| @Mock        | Used to create a mock                       | 
+| @Spy         | Used to create a spy                        | 
+| @InjectMocks | Inject mocks / spys into a class under test | 
+| @Captor      | Captures arguments to Mock                  | 
 
