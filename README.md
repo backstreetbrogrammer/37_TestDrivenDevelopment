@@ -24,7 +24,7 @@ Tools used:
     - [Parameterized Tests](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#parameterized-tests)
 3. [Mockito in details](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#chapter-03-mockito-in-details)
     - [Mockito Annotations](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#mockito-annotations)
-4. [Interview Problem (UBS): Design Tic-Tac-Toe game using TDD](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#chapter-02-junit-in-details)
+4. [Interview Problem (UBS): Design Tic-Tac-Toe game using TDD](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#chapter-04-interview-problem-ubs-design-tic-tac-toe-game-using-tdd)
 
 ---
 
