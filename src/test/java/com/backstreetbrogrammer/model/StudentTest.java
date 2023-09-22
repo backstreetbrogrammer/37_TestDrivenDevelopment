@@ -5,9 +5,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 public class StudentTest {
 
@@ -61,5 +63,11 @@ public class StudentTest {
     @ValueSource(strings = {"Advanced", "Java", "Course"})
     void testValueSource(final String val) {
         System.out.println(val);
+    }
+
+    @Test
+    void testInlineMock() {
+        final Map mapMock = mock(Map.class);
+        assertEquals(0, mapMock.size());
     }
 }

@@ -1,5 +1,7 @@
 package com.backstreetbrogrammer.model;
 
+import java.util.Objects;
+
 public class Student {
 
     private final long id;
@@ -23,5 +25,18 @@ public class Student {
 
     public String getLastName() {
         return lastName;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final Student student = (Student) o;
+        return id == student.id && Objects.equals(firstName, student.firstName) && Objects.equals(lastName, student.lastName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, firstName, lastName);
     }
 }

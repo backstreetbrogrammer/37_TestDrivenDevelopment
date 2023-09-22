@@ -24,7 +24,7 @@ Tools used:
     - [Parameterized Tests](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#parameterized-tests)
 3. [Mockito in details](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#chapter-03-mockito-in-details)
     - [Mockito Annotations](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#mockito-annotations)
-4. Design Tic-Tac-Toe game using TDD
+4. [Interview Problem (UBS): Design Tic-Tac-Toe game using TDD](https://github.com/backstreetbrogrammer/37_TestDrivenDevelopment#chapter-02-junit-in-details)
 
 ---
 
@@ -849,3 +849,1147 @@ Mockito is the most popular mocking framework for testing Java:
 | @InjectMocks | Inject mocks / spys into a class under test | 
 | @Captor      | Captures arguments to Mock                  | 
 
+**Inline Mocks**
+
+We can create mock for any class.
+
+Calling any method on mock will return default value if method does not have `void` return type.
+
+```
+    @Test
+    void testInlineMock() {
+        final Map mapMock = mock(Map.class);
+        assertEquals(0, mapMock.size());
+    }
+```
+
+Preferred way to use Mocks is using annotations:
+
+```java
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Map;
+
+@ExtendWith(MockitoExtension.class)
+public class AnnotationMockTest {
+
+    @Mock
+    Map<String, Object> mapMock;
+
+    @Test
+    void testMock() {
+        mapMock.put("Java", "Guidemy");
+    }
+
+}
+```
+
+**Inject Mocks**
+
+We can use dependency injections as Mocks.
+
+Suppose we have a `StudentsRepository` class:
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+public class StudentsRepository {
+
+    private final Map<Long, Student> cache = new HashMap<>();
+
+    public Student save(final Student student) {
+        return cache.put(student.getId(), student);
+    }
+
+    public Student findById(final Long id) {
+        return cache.get(id);
+    }
+
+    public Student deleteById(final Long id) {
+        return cache.remove(id);
+    }
+
+    public Student delete(final Student student) {
+        return cache.remove(student.getId());
+    }
+
+}
+```
+
+Now this class is used as a dependency and injected as a constructor:
+
+```java
+public class GuidemyStudents {
+
+    private final StudentsRepository repository;
+
+    public GuidemyStudents(final StudentsRepository repository) {
+        this.repository = repository;
+    }
+
+    public Student deleteById(final Long id) {
+        return repository.deleteById(id);
+    }
+
+    public Student delete(final Student student) {
+        return repository.delete(student);
+    }
+
+}
+```
+
+In our test class, we can inject `StudentsRepository` class as Mock:
+
+```java
+import com.backstreetbrogrammer.model.Student;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+public class GuidemyStudentsTest {
+
+    @Mock
+    StudentsRepository repository;
+
+    @InjectMocks
+    GuidemyStudents guidemyStudents;
+
+    @Test
+    void testDeleteById() {
+        guidemyStudents.deleteById(1L);
+    }
+
+    @Test
+    void testDelete() {
+        guidemyStudents.delete(new Student(1L, "John", "Wright"));
+    }
+
+}
+```
+
+**Verify interactions with Mocks**
+
+We can verify how many times a mock method has been invoked.
+
+```
+    @Test
+    void testDeleteById() {
+        // given - none
+
+        // when
+        guidemyStudents.deleteById(1L);
+        guidemyStudents.deleteById(1L);
+
+        // then
+        verify(repository, times(2)).deleteById(1L);
+        verify(repository, atLeastOnce()).deleteById(1L);
+        verify(repository, atMost(5)).deleteById(1L);
+        verify(repository, never()).deleteById(3L);
+    }
+```
+
+**Returning values from Mocks**
+
+Most important usage of using Mocks is to return a mocked value.
+
+```
+    @Test
+    void testFindStudentById() {
+        // given
+        final Student student = new Student(1L, "John", "Wright");
+
+        // when
+        when(repository.findById(1L)).thenReturn(student);
+        final Student studentFromRepo = repository.findById(1L);
+
+        // then
+        assertNotNull(studentFromRepo);
+        assertTrue(student.equals(studentFromRepo));
+
+        verify(repository, times(1)).findById(1L);
+    }
+```
+
+**Argument Matchers**
+
+We can use argument matchers `any()` to mock with any object or primitives we want.
+
+```
+    @Test
+    void testDelete() {
+        // given
+        final Student student = new Student(1L, "John", "Wright");
+
+        // when
+        guidemyStudents.delete(student);
+
+        // then
+        verify(repository).delete(any(Student.class));
+    }
+```
+
+**Argument Captors**
+
+When the mock is calling a method with an argument, the argument can be captured and then tested. This is useful to
+test if the argument passed to the testing method is changed as expected.
+
+```
+    @Test
+    void testArgumentCaptor() {
+        // given
+        final Student student = new Student(1L, "John", "Wright");
+        final ArgumentCaptor<Long> captor = ArgumentCaptor.forClass(Long.class);
+
+        // when
+        guidemyStudents.find(student);
+
+        // then
+        verify(repository).findById(captor.capture());
+        assertEquals(1L, captor.getValue());
+    }
+```
+
+---
+
+## Chapter 04. Interview Problem (UBS): Design Tic-Tac-Toe game using TDD
+
+Tic-tac-toe is a paper-and-pencil game for two players, **X** and **O**, who take turns marking the spaces in a **3×3**
+grid. The player who succeeds in placing three respective marks in a horizontal, vertical, or diagonal row, wins the
+game.
+
+**Requirement 1**: A piece can be placed on any empty space of a 3×3 board.
+
+We can split this requirement into **three** tests:
+
+- When a piece is placed anywhere outside the X axis, then `RuntimeException` is thrown.
+- When a piece is placed anywhere outside the Y axis, then `RuntimeException` is thrown.
+- When a piece is placed on an occupied space, then `RuntimeException` is thrown.
+
+**Solution 1**: Before we write any test, lets create our classes first.
+
+In `source` package:
+
+```java
+public class TicTacToe {
+
+}
+```
+
+In `test` package:
+
+```java
+import org.junit.jupiter.api.BeforeEach;
+
+public class TicTacToeTest {
+
+    private TicTacToe ticTacToe;
+
+    @BeforeEach
+    void setUp() {
+        ticTacToe = new TicTacToe();
+    }
+
+}
+```
+
+Write **Test Case 1**: When a piece is placed anywhere outside the X axis, then `RuntimeException` is thrown.
+
+```
+    @Test
+    @DisplayName("When a piece is placed outside the X axis, then RuntimeException is thrown")
+    void whenXOutsideBoardThenThrowRuntimeException() {
+        final Throwable exception = assertThrows(RuntimeException.class, () -> ticTacToe.play(6, 2));
+        assertEquals(exception.getMessage(), "X is outside board");
+    }
+```
+
+As `play()` method is not yet written in `TicTacToe` class, it will show compilation error. Thus, implement the
+`play()` method in `TicTacToe` class:
+
+```java
+public class TicTacToe {
+
+    public void play(final int x, final int y) {
+        if (x < 1 || x > 3) {
+            throw new RuntimeException("X is outside board");
+        }
+    }
+
+}
+```
+
+Now RUN the test case and it should PASS.
+
+Similarly, Write **Test Case 2**: When a piece is placed anywhere outside the Y axis, then `RuntimeException` is thrown.
+
+```
+    @Test
+    @DisplayName("When a piece is placed outside the Y axis, then RuntimeException is thrown")
+    void whenYOutsideBoardThenThrowRuntimeException() {
+        final Throwable exception = assertThrows(RuntimeException.class, () -> ticTacToe.play(2, 5));
+        assertEquals(exception.getMessage(), "Y is outside board");
+    }
+```
+
+RUN the test and it should FAIL.
+
+Implement the `play()` method to pass the test.
+
+```java
+public class TicTacToe {
+
+    public void play(final int x, final int y) {
+        if (x < 1 || x > 3) {
+            throw new RuntimeException("X is outside board");
+        } else if (y < 1 || y > 3) {
+            throw new RuntimeException("Y is outside board");
+        }
+    }
+
+}
+```
+
+RUN the test case and it should PASS.
+
+Write **Test Case 3**: When a piece is placed on an occupied space, then `RuntimeException` is thrown.
+
+```
+    @Test
+    @DisplayName("When a piece is placed on an occupied space, then RuntimeException is thrown")
+    void whenBoxOccupiedThenThrowRuntimeException() {
+        ticTacToe.play(1, 2);
+        final Throwable exception = assertThrows(RuntimeException.class, () -> ticTacToe.play(1, 2));
+        assertEquals(exception.getMessage(), "Box is already occupied");
+    }
+```
+
+RUN the test and it should FAIL.
+
+Implement the `play()` method to pass the test.
+
+```java
+public class TicTacToe {
+
+    private static final String EMPTY = "-1";
+
+    private final String[][] board = new String[][]{
+            {EMPTY, EMPTY, EMPTY},
+            {EMPTY, EMPTY, EMPTY},
+            {EMPTY, EMPTY, EMPTY}
+    };
+
+    public void play(final int x, final int y) {
+        if (x < 1 || x > 3) {
+            throw new RuntimeException("X is outside board");
+        } else if (y < 1 || y > 3) {
+            throw new RuntimeException("Y is outside board");
+        }
+        if (EMPTY.equals(board[x - 1][y - 1])) {
+            board[x - 1][y - 1] = "X";
+        } else {
+            throw new RuntimeException("Box is already occupied");
+        }
+    }
+
+}
+```
+
+RUN the test case and it should PASS.
+
+RUN all the test cases and all should PASS - the new test case implementations should not break the previous test cases.
+
+Now we have passed all the test cases - we should **REFACTOR** the code.
+
+- remove the duplicate code
+- segregate logic into methods to make it clean and more readable
+
+```java
+public class TicTacToe {
+
+    private static final String EMPTY = "-1";
+
+    private final String[][] board = new String[][]{
+            {EMPTY, EMPTY, EMPTY},
+            {EMPTY, EMPTY, EMPTY},
+            {EMPTY, EMPTY, EMPTY}
+    };
+
+    public void play(final int x, final int y) {
+        checkAxis(x, "X");
+        checkAxis(y, "Y");
+        setBox(x, y);
+    }
+
+    private void checkAxis(final int axis, final String axisName) {
+        if (axis < 1 || axis > 3) {
+            throw new RuntimeException(String.format("%s is outside board", axisName));
+        }
+    }
+
+    private void setBox(final int x, final int y) {
+        if (EMPTY.equals(board[x - 1][y - 1])) {
+            board[x - 1][y - 1] = "X";
+        } else {
+            throw new RuntimeException("Box is already occupied");
+        }
+    }
+
+}
+```
+
+We have completed **Requirement 1**.
+
+---
+
+**Requirement 2**: There should be a way to find out which player should play next.
+
+We can split this requirement into **three** tests:
+
+- The first turn should be played by played `X`.
+- If the last turn was played by `X`, then the next turn should be played by `O`.
+- If the last turn was played by `O`, then the next turn should be played by `X`.
+
+**Solution 2**:
+
+Write **Test Case 1**: The first turn should be played by played `X`.
+
+```
+    @Test
+    @DisplayName("The first turn should be played by player X")
+    void firstTurnShouldBePlayerX() {
+        assertEquals("X", ticTacToe.nextPlayer());
+    }
+```
+
+As `nextPlayer()` method is not yet written in `TicTacToe` class, it will show compilation error. Thus, implement the
+`nextPlayer()` method in `TicTacToe` class:
+
+```
+    public String nextPlayer() {
+        return "X";
+    }
+```
+
+RUN the test case and it should PASS.
+
+Now, we should make sure that players are changing. After `X` is finished, it should be `O`'s turn, then again `X`, and
+so on.
+
+Write both the test cases as it will require the same implementation:
+
+- If the last turn was played by `X`, then the next turn should be played by `O`.
+- If the last turn was played by `O`, then the next turn should be played by `X`.
+
+```
+    @Test
+    @DisplayName("If the last turn was played by X, then the next turn should be played by O")
+    void ifLastPlayerXThenNextPlayerIsO() {
+        ticTacToe.play(1, 2); // this will be X
+        assertEquals("O", ticTacToe.nextPlayer());
+    }
+
+    @Test
+    @DisplayName("If the last turn was played by O, then the next turn should be played by X")
+    void ifLastPlayerOThenNextPlayerIsX() {
+        ticTacToe.play(1, 2); // this will be X
+        ticTacToe.play(2, 1); // this will be O
+        assertEquals("X", ticTacToe.nextPlayer());
+    }
+```
+
+RUN the test case and it should FAIL.
+
+Let's implement the code to pass it.
+
+```
+    private String lastPlayer = "";
+
+    public void play(final int x, final int y) {
+        checkAxis(x, "X");
+        checkAxis(y, "Y");
+        setBox(x, y);
+        lastPlayer = nextPlayer();
+    }
+
+    public String nextPlayer() {
+        if ("X".equals(lastPlayer)) {
+            return "O";
+        }
+        return "X";
+    }
+```
+
+RUN the test case and it should PASS.
+
+Now we see that the 2 test cases are redundant and require same implementation. Thus, we can remove one of it.
+
+Removed:
+
+```
+    @Test
+    @DisplayName("If the last turn was played by X, then the next turn should be played by O")
+    void ifLastPlayerXThenNextPlayerIsO() {
+        ticTacToe.play(1, 2); // this will be X
+        assertEquals("O", ticTacToe.nextPlayer());
+    }
+```
+
+Now, can we REFACTOR the code? - YES. Let's use `enum` for players as it can be only `X` or `O` being played.
+
+```
+    enum Player {
+        X("X"),
+        O("O"),
+        UNKNOWN("Unknown");
+
+        private final String player;
+
+        Player(final String player) {
+            this.player = player;
+        }
+
+        public static Player fromPlayer(final String player) {
+            return Arrays.stream(values())
+                         .filter(pl -> pl.player.equals(player))
+                         .findFirst()
+                         .orElse(UNKNOWN);
+        }
+
+        @Override
+        public String toString() {
+            return player;
+        }
+    }
+
+    private Player lastPlayer = Player.UNKNOWN;
+    
+    public void play(final int x, final int y) {
+        checkAxis(x, "X");
+        checkAxis(y, "Y");
+        setBox(x, y);
+        lastPlayer = Player.fromPlayer(nextPlayer());
+    }
+
+    public String nextPlayer() {
+        if (lastPlayer == Player.X) {
+            return Player.O.player;
+        }
+        return Player.X.player;
+    }
+```
+
+RUN all the test cases and all should PASS.
+
+We have completed **Requirement 2**.
+
+---
+
+**Requirement 3**: A player wins by being the first to connect a line of friendly pieces from one side or corner of the
+board to the other.
+
+We should verify horizontal, vertical, and diagonal lines.
+
+- Test Case 1: If no winning condition is fulfilled, then there is no winner.
+
+```
+    @Test
+    @DisplayName("If no winning condition is fulfilled, then there is no winner")
+    public void ifNoWinningConditionThenNoWinner()
+    {
+        final String actual = ticTacToe.play(1,2);
+        assertEquals("No winner", actual);
+    }
+```
+
+As `play()` method is not returning `String` in `TicTacToe` class, it will show compilation error.
+
+Let's change the method to return `String`.
+
+```
+    public String play(final int x, final int y) {
+        checkAxis(x, "X");
+        checkAxis(y, "Y");
+        setBox(x, y);
+        lastPlayer = Player.fromPlayer(nextPlayer());
+        return "No winner";
+    }
+```
+
+RUN the test case and it should PASS.
+
+- Test Case 2: The player wins when the whole horizontal line is occupied by her pieces
+
+```
+    @Test
+    @DisplayName("The player wins when the whole horizontal line is occupied by her pieces")
+    public void whenWholeHorizontalLineIsOccupiedByXThenXIsWinner() {
+        ticTacToe.play(1, 1); // X
+        ticTacToe.play(1, 2); // O
+        ticTacToe.play(2, 1); // X
+        ticTacToe.play(2, 2); // O
+        String actual = ticTacToe.play(3, 1); // X
+        assertEquals("X is the winner", actual);
+    }
+```
+
+We need to introduce not only which board boxes are empty, but also which player played them.
+
+```
+    public String play(final int x, final int y) {
+        checkAxis(x, "X");
+        checkAxis(y, "Y");
+        setBox(x, y);
+        lastPlayer = Player.fromPlayer(nextPlayer());
+        for (int index = 0; index < 3; index++) {
+            if (board[0][index].equals(lastPlayer.player) &&
+                    board[1][index].equals(lastPlayer.player) &&
+                    board[2][index].equals(lastPlayer.player)) {
+                return String.format("%s is the winner", lastPlayer);
+            }
+        }
+        return "No winner";
+    }
+```
+
+RUN the test case and it should PASS.
+
+REFACTOR the code.
+
+```
+    public String play(final int x, final int y) {
+        checkAxis(x, "X");
+        checkAxis(y, "Y");
+        lastPlayer = Player.fromPlayer(nextPlayer());
+        setBox(x, y, lastPlayer);
+        return hasWin() ? String.format("%s is the winner", lastPlayer) : "No winner";
+    }
+
+    private boolean hasWin() {
+        for (int index = 0; index < 3; index++) {
+            if (board[0][index].equals(lastPlayer.player) &&
+                    board[1][index].equals(lastPlayer.player) &&
+                    board[2][index].equals(lastPlayer.player)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void setBox(final int x, final int y, final Player lastPlayer) {
+        if (EMPTY.equals(board[x - 1][y - 1])) {
+            board[x - 1][y - 1] = lastPlayer.player;
+        } else {
+            throw new RuntimeException("Box is already occupied");
+        }
+    }
+```
+
+- Test Case 3: The player wins when the whole vertical line is occupied by her pieces
+
+This is quite similar to the previous test case for horizontal line.
+
+```
+    @Test
+    @DisplayName("The player wins when the whole vertical line is occupied by her pieces")
+    public void whenWholeVerticalLineIsOccupiedByXThenXIsWinner() {
+        ticTacToe.play(1, 1); // X
+        ticTacToe.play(2, 1); // O
+        ticTacToe.play(1, 2); // X
+        ticTacToe.play(2, 2); // O
+        String actual = ticTacToe.play(1, 3); // X
+        assertEquals("X is the winner", actual);
+    }
+```
+
+We need to change the index to check for vertical.
+
+```
+    private boolean hasWin() {
+        boolean hasWin = false;
+        for (int index = 0; index < 3; index++) {
+            // horizontal
+            if (board[0][index].equals(lastPlayer.player) &&
+                    board[1][index].equals(lastPlayer.player) &&
+                    board[2][index].equals(lastPlayer.player)) {
+                hasWin = true;
+                break;
+            } else if (board[index][0].equals(lastPlayer.player) &&
+                    board[index][1].equals(lastPlayer.player) &&
+                    board[index][2].equals(lastPlayer.player)) { // vertical
+                hasWin = true;
+                break;
+            }
+        }
+        return hasWin;
+    }
+```
+
+RUN the test case and it should PASS.
+
+- Test Case 4: The player wins when the whole diagonal line from the top-left to bottom-right is occupied by her pieces
+
+```
+    @Test
+    @DisplayName("The player wins when the whole diagonal line from the top-left to bottom-right is occupied by her pieces")
+    public void whenWholeDiagonalLineFromTopLeftToBottomRightIsOccupiedByXThenXIsWinner() {
+        ticTacToe.play(1, 3); // X
+        ticTacToe.play(1, 2); // O
+        ticTacToe.play(2, 2); // X
+        ticTacToe.play(2, 3); // O
+        final String actual = ticTacToe.play(3, 1); // X
+        assertEquals("X is the winner", actual);
+    }
+```
+
+RUN the test case and it should FAIL.
+
+We do not need to check in the loop and can simply have a check for top-left to bottom-right boxes.
+
+```
+    private boolean hasWin() {
+        for (int index = 0; index < 3; index++) {
+            // horizontal
+            if (board[0][index].equals(lastPlayer.player) &&
+                    board[1][index].equals(lastPlayer.player) &&
+                    board[2][index].equals(lastPlayer.player)) {
+                return true;
+            } else if (board[index][0].equals(lastPlayer.player) &&
+                    board[index][1].equals(lastPlayer.player) &&
+                    board[index][2].equals(lastPlayer.player)) { // vertical
+                return true;
+            }
+        }
+
+        if (board[0][2].equals(lastPlayer.player) &&
+                board[1][1].equals(lastPlayer.player) &&
+                board[2][0].equals(lastPlayer.player)) { // diagonal - topLeft to rightBottom
+            return true;
+        }
+
+        return false;
+    }
+```
+
+RUN the test case and it should PASS.
+
+- Test Case 5: The player wins when the whole diagonal line from the top-right to bottom-left is occupied by her pieces
+
+```
+    @Test
+    @DisplayName("The player wins when the whole diagonal line from the top-right to bottom-left is occupied by her pieces")
+    public void whenWholeDiagonalLineFromTopRightToBottomLeftIsOccupiedByXThenXIsWinner() {
+        ticTacToe.play(3, 3); // X
+        ticTacToe.play(1, 2); // O
+        ticTacToe.play(2, 2); // X
+        ticTacToe.play(1, 3); // O
+        String actual = ticTacToe.play(1, 1); // X
+        assertEquals("X is the winner", actual);
+    }
+```
+
+RUN the test case and it should FAIL.
+
+The implementation is very much similar to previous test case.
+
+```
+    private boolean hasWin() {
+        for (int index = 0; index < 3; index++) {
+            // horizontal
+            if (board[0][index].equals(lastPlayer.player) &&
+                    board[1][index].equals(lastPlayer.player) &&
+                    board[2][index].equals(lastPlayer.player)) {
+                return true;
+            } else if (board[index][0].equals(lastPlayer.player) &&
+                    board[index][1].equals(lastPlayer.player) &&
+                    board[index][2].equals(lastPlayer.player)) { // vertical
+                return true;
+            }
+        }
+
+        if (board[0][2].equals(lastPlayer.player) &&
+                board[1][1].equals(lastPlayer.player) &&
+                board[2][0].equals(lastPlayer.player)) { // diagonal - topLeft to bottomRight
+            return true;
+        }
+
+        if (board[2][2].equals(lastPlayer.player) &&
+                board[1][1].equals(lastPlayer.player) &&
+                board[0][0].equals(lastPlayer.player)) { // diagonal - topRight to bottomLeft
+            return true;
+        }
+
+        return false;
+    }
+```
+
+The `hasWin()` method is getting too verbose and a lot of return breaks - let's REFACTOR the code.
+
+```
+    private boolean hasWin() {
+        return horizontalWinCheck() || verticalWinCheck() || diagonalWinCheck();
+    }
+
+    private boolean horizontalWinCheck() {
+        for (int index = 0; index < 3; index++) {
+            if (board[0][index].equals(lastPlayer.player) &&
+                    board[1][index].equals(lastPlayer.player) &&
+                    board[2][index].equals(lastPlayer.player)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean verticalWinCheck() {
+        for (int index = 0; index < 3; index++) {
+            if (board[index][0].equals(lastPlayer.player) &&
+                    board[index][1].equals(lastPlayer.player) &&
+                    board[index][2].equals(lastPlayer.player))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean diagonalWinCheck() {
+        return (board[0][2].equals(lastPlayer.player) &&
+                board[1][1].equals(lastPlayer.player) &&
+                board[2][0].equals(lastPlayer.player)) // topLeft to bottomRight
+                || (board[2][2].equals(lastPlayer.player) &&
+                board[1][1].equals(lastPlayer.player) &&
+                board[0][0].equals(lastPlayer.player)); // topRight to bottomLeft
+    }
+```
+
+RUN all the test cases and all should PASS.
+
+We have completed **Requirement 3**.
+
+---
+
+**Requirement 4**: The result is a draw when all the boxes are filled and no winner.
+
+Let's write the unit test.
+
+```
+    @Test
+    @DisplayName("The result is a draw when all the boxes are filled and no winner")
+    public void whenAllBoxesAreFilledAndNoWinnerThenDraw() {
+        ticTacToe.play(1, 1); // X
+        ticTacToe.play(1, 2); // O
+        ticTacToe.play(1, 3); // X
+        ticTacToe.play(2, 1); // O
+        ticTacToe.play(2, 3); // X
+        ticTacToe.play(2, 2); // O
+        ticTacToe.play(3, 1); // X
+        ticTacToe.play(3, 3); // O
+        String actual = ticTacToe.play(3, 2); // X
+        assertEquals("The result is draw", actual);
+    }
+```
+
+RUN the test case and it should FAIL.
+
+Implementation of the draw case is simple - we just need to check if all the boxes are occupied or not and there are no
+more moves left.
+
+```
+    public String play(final int x, final int y) {
+        checkAxis(x, "X");
+        checkAxis(y, "Y");
+        lastPlayer = Player.fromPlayer(nextPlayer());
+        setBox(x, y, lastPlayer);
+        String result;
+        if (hasWin()) {
+            result = String.format("%s is the winner", lastPlayer);
+        } else if (isDraw()) {
+            result = "The result is draw";
+        } else {
+            result = "No winner";
+        }
+        return result;
+    }
+
+    private boolean isDraw() {
+        for (int x = 0; x < 3; x++) {
+            for (int y = 0; y < 3; y++) {
+                if (EMPTY.equals(board[x][y])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+```
+
+RUN the test case and it should PASS.
+
+RUN all the test cases and all should PASS.
+
+We have done enough REFACTORING of the code but still we can further refactor it - based on the programming style of a
+developer. We just need to ensure that whenever code is changed, all the test cases should PASS.
+
+All the implementations are done, and now we need to ensure at-least 60% test code coverage is there. It means that we
+have written enough unit test cases to cover testing for at-least 60% of code - this is a production standard maintained
+in most of the firms.
+
+![TDD test coverage](TDDcoverage.PNG)
+
+We can run the test code coverage by clicking the button and it will give the results. As seen, in our Tic-Tac-Toe TDD
+example, we have 100% tests code coverage.
+
+Final `TicTacToe` class:
+
+```java
+import java.util.Arrays;
+
+public class TicTacToe {
+
+    private static final String EMPTY = "-1";
+
+    enum Player {
+        X("X"),
+        O("O"),
+        UNKNOWN("Unknown");
+
+        private final String player;
+
+        Player(final String player) {
+            this.player = player;
+        }
+
+        public static Player fromPlayer(final String player) {
+            return Arrays.stream(values())
+                         .filter(pl -> pl.player.equals(player))
+                         .findFirst()
+                         .orElse(UNKNOWN);
+        }
+
+        @Override
+        public String toString() {
+            return player;
+        }
+    }
+
+    private Player lastPlayer = Player.UNKNOWN;
+
+    private final String[][] board = new String[][]{
+            {EMPTY, EMPTY, EMPTY},
+            {EMPTY, EMPTY, EMPTY},
+            {EMPTY, EMPTY, EMPTY}
+    };
+
+    public String play(final int x, final int y) {
+        checkAxis(x, "X");
+        checkAxis(y, "Y");
+        lastPlayer = Player.fromPlayer(nextPlayer());
+        setBox(x, y, lastPlayer);
+        final String result;
+        if (hasWin()) {
+            result = String.format("%s is the winner", lastPlayer);
+        } else if (isDraw()) {
+            result = "The result is draw";
+        } else {
+            result = "No winner";
+        }
+        return result;
+    }
+
+    private boolean isDraw() {
+        for (int x = 0; x < 3; x++) {
+            for (int y = 0; y < 3; y++) {
+                if (EMPTY.equals(board[x][y])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean hasWin() {
+        return horizontalWinCheck() || verticalWinCheck() || diagonalWinCheck();
+    }
+
+    private boolean horizontalWinCheck() {
+        for (int index = 0; index < 3; index++) {
+            if (board[0][index].equals(lastPlayer.player) &&
+                    board[1][index].equals(lastPlayer.player) &&
+                    board[2][index].equals(lastPlayer.player)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean verticalWinCheck() {
+        for (int index = 0; index < 3; index++) {
+            if (board[index][0].equals(lastPlayer.player) &&
+                    board[index][1].equals(lastPlayer.player) &&
+                    board[index][2].equals(lastPlayer.player))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean diagonalWinCheck() {
+        return (board[0][2].equals(lastPlayer.player) &&
+                board[1][1].equals(lastPlayer.player) &&
+                board[2][0].equals(lastPlayer.player)) // topLeft to bottomRight
+                || (board[2][2].equals(lastPlayer.player) &&
+                board[1][1].equals(lastPlayer.player) &&
+                board[0][0].equals(lastPlayer.player)); // topRight to bottomLeft
+    }
+
+    private void checkAxis(final int axis, final String axisName) {
+        if (axis < 1 || axis > 3) {
+            throw new RuntimeException(String.format("%s is outside board", axisName));
+        }
+    }
+
+    private void setBox(final int x, final int y, final Player lastPlayer) {
+        if (EMPTY.equals(board[x - 1][y - 1])) {
+            board[x - 1][y - 1] = lastPlayer.player;
+        } else {
+            throw new RuntimeException("Box is already occupied");
+        }
+    }
+
+    public String nextPlayer() {
+        if (lastPlayer == Player.X) {
+            return Player.O.player;
+        }
+        return Player.X.player;
+    }
+
+}
+```
+
+Final `TicTacToeTest` class:
+
+```java
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class TicTacToeTest {
+
+    private TicTacToe ticTacToe;
+
+    @BeforeEach
+    void setUp() {
+        ticTacToe = new TicTacToe();
+    }
+
+    @Test
+    @DisplayName("When a piece is placed outside the X axis, then RuntimeException is thrown")
+    void whenXOutsideBoardThenThrowRuntimeException() {
+        final Throwable exception = assertThrows(RuntimeException.class, () -> ticTacToe.play(6, 2));
+        assertEquals(exception.getMessage(), "X is outside board");
+    }
+
+    @Test
+    @DisplayName("When a piece is placed outside the Y axis, then RuntimeException is thrown")
+    void whenYOutsideBoardThenThrowRuntimeException() {
+        final Throwable exception = assertThrows(RuntimeException.class, () -> ticTacToe.play(2, 5));
+        assertEquals(exception.getMessage(), "Y is outside board");
+    }
+
+    @Test
+    @DisplayName("When a piece is placed on an occupied space, then RuntimeException is thrown")
+    void whenBoxOccupiedThenThrowRuntimeException() {
+        ticTacToe.play(1, 2);
+        final Throwable exception = assertThrows(RuntimeException.class, () -> ticTacToe.play(1, 2));
+        assertEquals(exception.getMessage(), "Box is already occupied");
+    }
+
+    @Test
+    @DisplayName("The first turn should be played by player X")
+    void firstTurnShouldBePlayerX() {
+        assertEquals("X", ticTacToe.nextPlayer());
+    }
+
+    @Test
+    @DisplayName("If the last turn was played by O, then the next turn should be played by X")
+    void ifLastPlayerOThenNextPlayerIsX() {
+        ticTacToe.play(1, 2); // this will be X
+        ticTacToe.play(2, 1); // this will be O
+        assertEquals("X", ticTacToe.nextPlayer());
+    }
+
+    @Test
+    @DisplayName("If no winning condition is fulfilled, then there is no winner")
+    public void ifNoWinningConditionThenNoWinner() {
+        final String actual = ticTacToe.play(1, 2);
+        assertEquals("No winner", actual);
+    }
+
+    @Test
+    @DisplayName("The player wins when the whole horizontal line is occupied by her pieces")
+    public void whenWholeHorizontalLineIsOccupiedByXThenXIsWinner() {
+        ticTacToe.play(1, 1); // X
+        ticTacToe.play(1, 2); // O
+        ticTacToe.play(2, 1); // X
+        ticTacToe.play(2, 2); // O
+        final String actual = ticTacToe.play(3, 1); // X
+        assertEquals("X is the winner", actual);
+    }
+
+    @Test
+    @DisplayName("The player wins when the whole vertical line is occupied by her pieces")
+    public void whenWholeVerticalLineIsOccupiedByXThenXIsWinner() {
+        ticTacToe.play(1, 1); // X
+        ticTacToe.play(2, 1); // O
+        ticTacToe.play(1, 2); // X
+        ticTacToe.play(2, 2); // O
+        final String actual = ticTacToe.play(1, 3); // X
+        assertEquals("X is the winner", actual);
+    }
+
+    @Test
+    @DisplayName("The player wins when the whole diagonal line from the top-left to bottom-right is occupied by her pieces")
+    public void whenWholeDiagonalLineFromTopLeftToBottomRightIsOccupiedByXThenXIsWinner() {
+        ticTacToe.play(1, 3); // X
+        ticTacToe.play(1, 2); // O
+        ticTacToe.play(2, 2); // X
+        ticTacToe.play(2, 3); // O
+        final String actual = ticTacToe.play(3, 1); // X
+        assertEquals("X is the winner", actual);
+    }
+
+    @Test
+    @DisplayName("The player wins when the whole diagonal line from the top-right to bottom-left is occupied by her pieces")
+    public void whenWholeDiagonalLineFromTopRightToBottomLeftIsOccupiedByXThenXIsWinner() {
+        ticTacToe.play(3, 3); // X
+        ticTacToe.play(1, 2); // O
+        ticTacToe.play(2, 2); // X
+        ticTacToe.play(1, 3); // O
+        final String actual = ticTacToe.play(1, 1); // X
+        assertEquals("X is the winner", actual);
+    }
+
+    @Test
+    @DisplayName("The result is a draw when all the boxes are filled and no winner")
+    public void whenAllBoxesAreFilledAndNoWinnerThenDraw() {
+        ticTacToe.play(1, 1); // X
+        ticTacToe.play(1, 2); // O
+        ticTacToe.play(1, 3); // X
+        ticTacToe.play(2, 1); // O
+        ticTacToe.play(2, 3); // X
+        ticTacToe.play(2, 2); // O
+        ticTacToe.play(3, 1); // X
+        ticTacToe.play(3, 3); // O
+        final String actual = ticTacToe.play(3, 2); // X
+        assertEquals("The result is draw", actual);
+    }
+
+}
+```
